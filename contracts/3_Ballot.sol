@@ -6,6 +6,10 @@ pragma solidity >=0.7.0 <0.9.0;
  * @title Ballot
  * @dev Implements voting process along with vote delegation
  */
+/** 
+ * @title Ballot
+ * @dev Implements voting process along with vote delegation
+ */
 contract Ballot {
 
     struct Voter {
@@ -28,6 +32,9 @@ contract Ballot {
 
     Proposal[] public proposals;
 
+    uint256 public startTime;
+    uint256 public endTime;
+
     /** 
      * @dev Create a new ballot to choose one of 'proposalNames'.
      * @param proposalNames names of proposals
@@ -35,6 +42,7 @@ contract Ballot {
     constructor(bytes32[] memory proposalNames) {
         chairperson = msg.sender;
         voters[chairperson].weight = 1;
+        uint256 _voteduration  = 60;
 
         for (uint i = 0; i < proposalNames.length; i++) {
             // 'Proposal({...})' creates a temporary
@@ -44,7 +52,11 @@ contract Ballot {
                 name: proposalNames[i],
                 voteCount: 0
             }));
+
         }
+
+        startTime = block.timestamp;
+        endTime = startTime + _voteduration;
     }
 
     /** 
@@ -98,11 +110,18 @@ contract Ballot {
      * @param proposal index of proposal in the proposals array
      */
     function vote(uint proposal) public {
+       
+        
+        require(block.timestamp >= startTime, "Voting has not started yet");
+        require(block.timestamp <= endTime, "Voting was over");
+        
         Voter storage sender = voters[msg.sender];
         require(sender.weight != 0, "Has no right to vote");
         require(!sender.voted, "Already voted.");
         sender.voted = true;
         sender.vote = proposal;
+
+
 
         // If 'proposal' is out of the range of the array,
         // this will throw automatically and revert all
@@ -135,4 +154,13 @@ contract Ballot {
     {
         winnerName_ = proposals[winningProposal()].name;
     }
+
+    function setVoterWeight(address voter, uint weight) public {
+        require(msg.sender == chairperson, "Only chairperson can set voter weight.");
+        require(block.timestamp <= endTime, "Cannot set voter weight after voting has ended.");
+        require(weight > 0, "Weight must be greater than zero.");
+
+        voters[voter].weight = weight;
+    }
+
 }
