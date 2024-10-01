@@ -162,5 +162,6 @@ contract Ballot {
 
         voters[voter].weight = weight;
     }
+    
 
 }
